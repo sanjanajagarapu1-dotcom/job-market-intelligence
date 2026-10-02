@@ -1,0 +1,31 @@
+platform,slug,company
+greenhouse,airbnb,Airbnb
+greenhouse,stripe,Stripe
+greenhouse,databricks,Databricks
+greenhouse,robinhood,Robinhood
+greenhouse,coinbase,Coinbase
+greenhouse,dropbox,Dropbox
+greenhouse,figma,Figma
+greenhouse,instacart,Instacart
+greenhouse,lyft,Lyft
+greenhouse,reddit,Reddit
+greenhouse,pinterest,Pinterest
+greenhouse,gitlab,GitLab
+greenhouse,twilio,Twilio
+greenhouse,asana,Asana
+greenhouse,discord,Discord
+greenhouse,duolingo,Duolingo
+greenhouse,brex,Brex
+greenhouse,chime,Chime
+greenhouse,datadog,Datadog
+greenhouse,mongodb,MongoDB
+greenhouse,okta,Okta
+greenhouse,roblox,Roblox
+greenhouse,affirm,Affirm
+greenhouse,samsara,Samsara
+greenhouse,gusto,Gusto
+lever,palantir,Palantir
+lever,spotify,Spotify
+lever,shieldai,Shield AI
+lever,zoox,Zoox
+lever,matchgroup,Match Group
