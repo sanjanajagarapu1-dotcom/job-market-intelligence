@@ -1,0 +1,47 @@
+﻿# Runs the whole data pipeline every day on GitHub's servers (free for public repos).
+# Keys come from GitHub Secrets: Settings -> Secrets and variables -> Actions.
+
+name: Daily job refresh
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # every day at 12:00 UTC (8 AM US Eastern)
+  workflow_dispatch:        # adds a "Run workflow" button to run it by hand
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+      ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      PYTHONUNBUFFERED: "1"   # show log lines immediately
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install libraries
+        run: pip install -r requirements.txt
+
+      - name: Fetch jobs from Adzuna
+        run: python pipeline/fetch_jobs.py
+
+      - name: Fetch jobs from company career pages
+        run: python pipeline/fetch_company_jobs.py
+
+      - name: Extract skills with AI (new jobs only)
+        run: python pipeline/extract_skills.py
+
+      - name: Upload to Supabase
+        run: python pipeline/load_to_db.py

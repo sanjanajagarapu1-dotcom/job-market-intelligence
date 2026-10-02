@@ -17,6 +17,7 @@ import time
 import pandas as pd
 from dotenv import load_dotenv
 from groq import Groq, RateLimitError
+from supabase import create_client
 
 # ---- 1. Setup ----
 load_dotenv()
@@ -80,11 +81,28 @@ def extract(title, description, model):
     return {}
 
 
+def load_done_from_db():
+    """No local results file (e.g. on GitHub Actions)? Get the jobs the AI
+    already processed from Supabase, so we don't process them again."""
+    supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+    rows, start = [], 0
+    while True:  # Supabase returns max 1000 rows per request
+        batch = (supabase.table("jobs").select("job_id, skills, seniority, work_mode, years_experience")
+                 .not_.is_("seniority", "null").range(start, start + 999).execute().data)
+        rows.extend(batch)
+        if len(batch) < 1000:
+            break
+        start += 1000
+    done = pd.DataFrame(rows, columns=["job_id", "skills", "seniority", "work_mode", "years_experience"])
+    done["skills"] = done["skills"].apply(lambda s: "; ".join(s) if isinstance(s, list) else "")
+    return done
+
+
 def main():
     jobs = pd.concat([pd.read_csv(f) for f in INPUT_FILES if os.path.exists(f)])
 
     # Skip jobs we already processed in an earlier run
-    done = pd.read_csv(OUTPUT_FILE) if os.path.exists(OUTPUT_FILE) else pd.DataFrame(columns=["job_id"])
+    done = pd.read_csv(OUTPUT_FILE) if os.path.exists(OUTPUT_FILE) else load_done_from_db()
     done["job_id"] = done["job_id"].astype(str)
     jobs["job_id"] = jobs["job_id"].astype(str)
     todo = jobs[~jobs["job_id"].isin(done["job_id"])]
