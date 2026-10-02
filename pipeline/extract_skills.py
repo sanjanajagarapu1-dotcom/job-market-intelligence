@@ -21,7 +21,7 @@ from supabase import create_client
 
 # ---- 1. Setup ----
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY", "").strip())
 
 # The free tier allows ~8,000 tokens per minute PER MODEL, so we take turns
 # between two similar models to double our speed.
@@ -84,7 +84,7 @@ def extract(title, description, model):
 def load_done_from_db():
     """No local results file (e.g. on GitHub Actions)? Get the jobs the AI
     already processed from Supabase, so we don't process them again."""
-    supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+    supabase = create_client(os.getenv("SUPABASE_URL", "").strip(), os.getenv("SUPABASE_KEY", "").strip())
     rows, start = [], 0
     while True:  # Supabase returns max 1000 rows per request
         batch = (supabase.table("jobs").select("job_id, skills, seniority, work_mode, years_experience")

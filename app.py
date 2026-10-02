@@ -26,8 +26,8 @@ def get_secret(name):
     """Read a key from .env locally, or from Streamlit secrets when deployed."""
     load_dotenv()
     if os.getenv(name):
-        return os.getenv(name)
-    return st.secrets[name]
+        return os.getenv(name).strip()
+    return st.secrets[name].strip()
 
 
 @st.cache_data(ttl=600)  # re-use the data for 10 minutes instead of reloading every click

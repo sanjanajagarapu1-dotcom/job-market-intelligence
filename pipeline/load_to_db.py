@@ -16,7 +16,8 @@ from supabase import create_client
 
 # ---- 1. Connect to Supabase ----
 load_dotenv()
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+# .strip() removes accidental spaces/line breaks from copy-pasted keys
+supabase = create_client(os.getenv("SUPABASE_URL", "").strip(), os.getenv("SUPABASE_KEY", "").strip())
 
 JOBS_FILES = ["data/jobs.csv", "data/company_jobs.csv"]
 ENRICHED_FILE = "data/jobs_enriched.csv"

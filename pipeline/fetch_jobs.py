@@ -12,8 +12,9 @@ from dotenv import load_dotenv
 
 # ---- 1. Load secret keys from the .env file ----
 load_dotenv()
-APP_ID = os.getenv("ADZUNA_APP_ID")
-APP_KEY = os.getenv("ADZUNA_APP_KEY")
+# .strip() removes accidental spaces/line breaks from copy-pasted keys
+APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
+APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
 
 # ---- 2. Settings: what to search for ----
 SEARCH_TERMS = ["data analyst", "data scientist"]
