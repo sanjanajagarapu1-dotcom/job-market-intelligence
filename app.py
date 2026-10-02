@@ -164,15 +164,18 @@ with resume_tab:
 
         # Score each job: what share of its skills do you have?
         scored = filtered[filtered["skills"].str.len() > 0].copy()
-        scored["match"] = scored["skills"].apply(lambda skills: len(my_skills & set(skills)) / len(skills))
+        scored["matched"] = scored["skills"].apply(lambda skills: len(my_skills & set(skills)))
+        scored["match"] = (100 * scored["matched"] / scored["skills"].str.len()).round()
         scored["missing"] = scored["skills"].apply(lambda skills: sorted(set(skills) - my_skills))
-        top = scored.sort_values("match", ascending=False).head(15)
+        # Rank by match %, then by how many of your skills the job uses
+        # (so a job listing just 1 skill doesn't beat a richer match)
+        top = scored.sort_values(["match", "matched"], ascending=False).head(15)
 
         st.subheader("Best-matching jobs")
         st.dataframe(
             top[["match", "title", "company", "location", "missing", "url"]],
             column_config={
-                "match": st.column_config.ProgressColumn("Match", format="percentage", min_value=0, max_value=1),
+                "match": st.column_config.ProgressColumn("Match", format="%d%%", min_value=0, max_value=100),
                 "missing": "Skills you're missing",
                 "url": st.column_config.LinkColumn("Apply", display_text="Open"),
             },

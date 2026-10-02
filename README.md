@@ -1,5 +1,7 @@
 # 📊 AI Job Market Intelligence
 
+**🔗 Live demo: [job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app](https://job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app)**
+
 An end-to-end data pipeline and dashboard that collects data analyst and data scientist job postings, uses an LLM to extract the skills each job requires, and helps job seekers see which roles fit their resume and which skills to learn next.
 
 ## Features
@@ -7,6 +9,7 @@ An end-to-end data pipeline and dashboard that collects data analyst and data sc
 - **Multi-source job collection**: the Adzuna API plus public company career pages (Greenhouse and Lever APIs) for 30 tech companies
 - **AI skill extraction**: an LLM (Groq, `gpt-oss`) reads each job description and returns structured JSON: skills, seniority, work mode, and years of experience
 - **Cloud database**: jobs are stored in Supabase (PostgreSQL) with de-duplicating upserts
+- **Automated daily refresh**: a GitHub Actions cron job runs the whole pipeline every day, and the AI processes only new jobs
 - **Interactive dashboard** (Streamlit + Plotly):
   - Market overview: top skills, hiring companies, seniority, remote vs. onsite, salaries
   - Job explorer: search by title, company, or skill
@@ -16,6 +19,8 @@ An end-to-end data pipeline and dashboard that collects data analyst and data sc
 
 ```mermaid
 flowchart LR
+    S[GitHub Actions<br/>daily cron] -.runs.-> C
+    S -.runs.-> D
     A[Adzuna API] --> C[fetch_jobs.py]
     B[Greenhouse / Lever APIs] --> D[fetch_company_jobs.py]
     C --> E[extract_skills.py<br/>Groq LLM → JSON]
@@ -35,6 +40,7 @@ flowchart LR
 | Database | Supabase (PostgreSQL) |
 | Dashboard | Streamlit, Plotly |
 | Resume parsing | pypdf |
+| Automation / deployment | GitHub Actions, Streamlit Community Cloud |
 
 ## Project structure
 
@@ -46,6 +52,9 @@ job-market-intelligence/
 │   ├── companies.csv          # list of company job boards
 │   ├── extract_skills.py      # LLM extraction → data/jobs_enriched.csv
 │   └── load_to_db.py          # upload to Supabase
+├── .github/workflows/
+│   └── daily_refresh.yml      # daily pipeline run
+├── docs/                      # screenshots
 ├── app.py                     # Streamlit dashboard
 ├── requirements.txt
 └── README.md
@@ -80,7 +89,17 @@ job-market-intelligence/
 
 ## Screenshots
 
-_Coming soon_
+**Market overview**: KPIs, top skills, top hiring companies, seniority and work mode
+
+![Market overview](docs/overview.png)
+
+**Job explorer**: search across 600+ jobs by title, company or skill
+
+![Job explorer](docs/explorer.png)
+
+**Resume analyzer**: match score for each job and the top skills to learn next (shown with a sample resume)
+
+![Resume analyzer](docs/resume.png)
 
 ## Data sources and notes
 
