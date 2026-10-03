@@ -1,4 +1,4 @@
-﻿# Runs the whole data pipeline every day on GitHub's servers (free for public repos).
+# Runs the whole data pipeline every day on GitHub's servers (free for public repos).
 # Keys come from GitHub Secrets: Settings -> Secrets and variables -> Actions.
 
 name: Daily job refresh
@@ -45,3 +45,6 @@ jobs:
 
       - name: Upload to Supabase
         run: python pipeline/load_to_db.py
+
+      - name: Create embeddings for new jobs
+        run: python pipeline/embed_jobs.py

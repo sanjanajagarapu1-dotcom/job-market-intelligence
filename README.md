@@ -14,6 +14,7 @@ An end-to-end data pipeline and dashboard that collects data analyst and data sc
   - Market overview: top skills, hiring companies, seniority, remote vs. onsite, salaries
   - Job explorer: search by title, company, or skill
   - Resume analyzer: upload a PDF resume to get a match score for each job and a list of skill gaps
+- **Semantic matching with embeddings**: each job and resume is turned into a 384-dimension embedding (`bge-small-en`, via fastembed) and stored in **pgvector**. The match score combines skill overlap (50%) with meaning similarity (50%), so "built Tableau dashboards" matches "data visualization" even without shared keywords.
 
 ## Architecture
 
@@ -26,7 +27,9 @@ flowchart LR
     C --> E[extract_skills.py<br/>Groq LLM → JSON]
     D --> E
     E --> F[load_to_db.py]
-    F --> G[(Supabase<br/>PostgreSQL)]
+    F --> G[(Supabase<br/>PostgreSQL + pgvector)]
+    F --> V[embed_jobs.py<br/>fastembed]
+    V --> G
     G --> H[Streamlit dashboard<br/>app.py]
 ```
 
@@ -37,7 +40,8 @@ flowchart LR
 | Data collection | Python, Requests, REST APIs |
 | AI / NLP | Groq API (`gpt-oss` models), JSON mode, prompt engineering |
 | Data processing | pandas |
-| Database | Supabase (PostgreSQL) |
+| Database | Supabase (PostgreSQL), pgvector |
+| Embeddings | fastembed (`BAAI/bge-small-en-v1.5`, 384 dims) |
 | Dashboard | Streamlit, Plotly |
 | Resume parsing | pypdf |
 | Automation / deployment | GitHub Actions, Streamlit Community Cloud |
@@ -51,9 +55,11 @@ job-market-intelligence/
 │   ├── fetch_company_jobs.py  # Greenhouse/Lever → data/company_jobs.csv
 │   ├── companies.csv          # list of company job boards
 │   ├── extract_skills.py      # LLM extraction → data/jobs_enriched.csv
-│   └── load_to_db.py          # upload to Supabase
+│   ├── load_to_db.py          # upload to Supabase
+│   └── embed_jobs.py          # job embeddings → pgvector
 ├── .github/workflows/
 │   └── daily_refresh.yml      # daily pipeline run
+├── sql/schema.sql             # database tables, pgvector, match_jobs()
 ├── docs/                      # screenshots
 ├── app.py                     # Streamlit dashboard
 ├── requirements.txt
@@ -84,6 +90,7 @@ job-market-intelligence/
    python pipeline/fetch_company_jobs.py
    python pipeline/extract_skills.py
    python pipeline/load_to_db.py
+   python pipeline/embed_jobs.py
    streamlit run app.py
    ```
 
