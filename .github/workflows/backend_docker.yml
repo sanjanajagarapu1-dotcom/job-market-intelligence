@@ -1,0 +1,30 @@
+# CI check: every time the backend changes, build its Docker image
+# and make sure the API starts and answers.
+
+name: Backend Docker build
+
+on:
+  push:
+    paths: ["backend/**", ".github/workflows/backend_docker.yml"]
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v5
+
+      - name: Build the Docker image
+        run: docker build -f backend/Dockerfile -t job-api .
+
+      - name: Start the container
+        run: docker run -d -p 8000:8000 --name api job-api
+
+      - name: Check the API answers
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/ ; then echo; echo "API is up"; exit 0; fi
+            sleep 2
+          done
+          echo "API did not start"; docker logs api; exit 1

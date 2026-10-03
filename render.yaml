@@ -1,0 +1,18 @@
+# Render "Blueprint": tells Render how to deploy the API (free plan).
+# In Render: New + -> Blueprint -> pick this repo. It will ask for the two secrets.
+services:
+  - type: web
+    name: job-market-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        sync: false   # you type the value in Render, it is never stored in GitHub
+      - key: SUPABASE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "*"

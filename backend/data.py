@@ -32,7 +32,8 @@ def get_supabase():
 
 @lru_cache  # load the embedding model once (~70 MB)
 def get_embedding_model():
-    return TextEmbedding("BAAI/bge-small-en-v1.5")
+    # In Docker the model is pre-downloaded to FASTEMBED_CACHE_PATH; locally it uses the default cache
+    return TextEmbedding("BAAI/bge-small-en-v1.5", cache_dir=os.getenv("FASTEMBED_CACHE_PATH"))
 
 
 # ---------- Loading ----------
