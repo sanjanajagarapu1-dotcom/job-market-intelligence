@@ -45,7 +45,7 @@ flowchart LR
 | Dashboard | Streamlit, Plotly |
 | API | FastAPI, Uvicorn, Pydantic |
 | Resume parsing | pypdf |
-| Automation / deployment | GitHub Actions, Streamlit Community Cloud |
+| Automation / deployment | GitHub Actions (daily pipeline + Docker build check), Docker, Render, Streamlit Community Cloud |
 
 ## Project structure
 
@@ -102,6 +102,8 @@ job-market-intelligence/
 ## REST API (FastAPI)
 
 The `backend/` folder serves the same data as a JSON API, with interactive docs at `/docs`.
+
+**🔗 Live API: [job-market-api-fezz.onrender.com/docs](https://job-market-api-fezz.onrender.com/docs)**. It runs in Docker on Render's free tier, so the first request after it has been idle takes about 30–60 seconds to wake up.
 
 | Method | Endpoint | Returns |
 |---|---|---|
