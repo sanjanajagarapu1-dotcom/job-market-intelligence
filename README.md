@@ -43,6 +43,7 @@ flowchart LR
 | Database | Supabase (PostgreSQL), pgvector |
 | Embeddings | fastembed (`BAAI/bge-small-en-v1.5`, 384 dims) |
 | Dashboard | Streamlit, Plotly |
+| API | FastAPI, Uvicorn, Pydantic |
 | Resume parsing | pypdf |
 | Automation / deployment | GitHub Actions, Streamlit Community Cloud |
 
@@ -59,6 +60,10 @@ job-market-intelligence/
 │   └── embed_jobs.py          # job embeddings → pgvector
 ├── .github/workflows/
 │   └── daily_refresh.yml      # daily pipeline run
+├── backend/
+│   ├── main.py                # FastAPI endpoints
+│   ├── data.py                # loading, stats, resume matching
+│   └── requirements.txt
 ├── sql/schema.sql             # database tables, pgvector, match_jobs()
 ├── docs/                      # screenshots
 ├── app.py                     # Streamlit dashboard
@@ -93,6 +98,25 @@ job-market-intelligence/
    python pipeline/embed_jobs.py
    streamlit run app.py
    ```
+
+## REST API (FastAPI)
+
+The `backend/` folder serves the same data as a JSON API, with interactive docs at `/docs`.
+
+| Method | Endpoint | Returns |
+|---|---|---|
+| GET | `/jobs?search=&source=&seniority=&work_mode=&limit=&offset=` | Filtered, paginated jobs |
+| GET | `/stats/summary` | Job count, companies, average salary, remote share |
+| GET | `/stats/top-skills` | Most requested skills |
+| GET | `/stats/companies` | Companies hiring the most |
+| GET | `/stats/seniority`, `/stats/work-mode` | Job counts by level and by work mode |
+| POST | `/resume/match` (PDF upload) | Best-matching jobs, skill gaps, skills to learn |
+
+Run it locally:
+```bash
+uvicorn backend.main:app --reload
+# open http://localhost:8000/docs
+```
 
 ## Screenshots
 
