@@ -71,6 +71,14 @@ def get_jobs():
     return _cache["jobs"]
 
 
+def get_job_detail(job_id):
+    """One job including its full description (the cached table leaves descriptions out)."""
+    rows = (get_supabase().table("jobs")
+            .select("job_id, source, title, company, location, skills, description")
+            .eq("job_id", job_id).limit(1).execute().data)
+    return rows[0] if rows else None
+
+
 # ---------- Filtering ----------
 def filter_jobs(df, search=None, source=None, seniority=None, work_mode=None):
     if source:

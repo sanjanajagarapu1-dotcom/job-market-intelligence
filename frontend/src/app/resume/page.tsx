@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 
+import { AiPanel, type AiMode } from "@/components/ai-panels";
 import { HorizontalBars } from "@/components/charts";
 import { ErrorMessage, Loading } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { type ResumeResult, fetchJson } from "@/lib/api";
+import { type Match, type ResumeResult, fetchJson } from "@/lib/api";
 
 export default function ResumePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -16,6 +17,13 @@ export default function ResumePage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
+  const [active, setActive] = useState<{ job: Match; mode: AiMode } | null>(null);
+
+  function openAi(job: Match, mode: AiMode) {
+    setActive({ job, mode });
+    // Scroll to the panel once it has rendered
+    setTimeout(() => document.getElementById("ai-panel")?.scrollIntoView({ behavior: "smooth" }), 50);
+  }
 
   async function analyze() {
     if (!file) return;
@@ -23,6 +31,7 @@ export default function ResumePage() {
     setSlow(false);
     setError(null);
     setResult(null);
+    setActive(null);
     const timer = setTimeout(() => setSlow(true), 4000); // free server may be asleep
     const form = new FormData();
     form.append("file", file);
@@ -121,11 +130,19 @@ export default function ResumePage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {m.url && (
-                          <a href={m.url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">
-                            Apply
-                          </a>
-                        )}
+                        <div className="flex flex-col items-start gap-1.5">
+                          <Button size="sm" variant="outline" onClick={() => openAi(m, "tailor")}>
+                            Tailor resume
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => openAi(m, "cover-letter")}>
+                            Cover letter
+                          </Button>
+                          {m.url && (
+                            <a href={m.url} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline">
+                              Apply ↗
+                            </a>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -133,6 +150,16 @@ export default function ResumePage() {
               </Table>
             </CardContent>
           </Card>
+
+          {active && (
+            <AiPanel
+              key={`${active.job.job_id}-${active.mode}`}
+              job={active.job}
+              mode={active.mode}
+              resumeText={result.resume_text}
+              onClose={() => setActive(null)}
+            />
+          )}
 
           {result.skills_to_learn.length > 0 && (
             <Card>

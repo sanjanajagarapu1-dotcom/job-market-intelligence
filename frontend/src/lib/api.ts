@@ -46,10 +46,38 @@ export type Match = {
 };
 
 export type ResumeResult = {
+  resume_text: string;
   skills_found: string[];
   matches: Match[];
   skills_to_learn: NameCount[];
 };
+
+type JobInfo = {
+  job_title: string | null;
+  company: string | null;
+  limited_description: boolean;
+};
+
+export type TailoredResume = JobInfo & {
+  headline: string;
+  summary: string;
+  skills_to_highlight: string[];
+  bullets: { original: string; rewritten: string }[];
+  keywords_to_include: string[];
+  missing_skills: string[];
+  gaps: string[];
+};
+
+export type CoverLetter = JobInfo & { cover_letter: string };
+
+/** POST JSON to the API (used by the tailoring and cover letter features). */
+export function postJson<T>(path: string, body: unknown): Promise<T> {
+  return fetchJson<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
 
 // ---------- Calling the API ----------
 export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {

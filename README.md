@@ -16,6 +16,7 @@ An end-to-end data pipeline and dashboard that collects data analyst and data sc
 - **Multi-source job collection**: the Adzuna API plus public company career pages (Greenhouse and Lever APIs) for 30 tech companies
 - **AI skill extraction**: an LLM (Groq, `gpt-oss`) reads each job description and returns structured JSON: skills, seniority, work mode, and years of experience
 - **Cloud database**: jobs are stored in Supabase (PostgreSQL) with de-duplicating upserts
+- **AI resume tailoring and cover letters**: for any matching job, an LLM rewrites the resume's existing bullets one-for-one (each shown next to the original), suggests a headline and summary, and writes a cover letter. Guardrails: the prompt forbids inventing facts, skill gaps and keywords are computed in code from the job's extracted skills, and highlighted skills not found in the resume are dropped.
 - **Automated daily refresh**: a GitHub Actions cron job runs the whole pipeline every day, and the AI processes only new jobs
 - **Interactive dashboard** (Streamlit + Plotly):
   - Market overview: top skills, hiring companies, seniority, remote vs. onsite, salaries
@@ -126,6 +127,8 @@ The `backend/` folder serves the same data as a JSON API, with interactive docs 
 | GET | `/stats/companies` | Companies hiring the most |
 | GET | `/stats/seniority`, `/stats/work-mode` | Job counts by level and by work mode |
 | POST | `/resume/match` (PDF upload) | Best-matching jobs, skill gaps, skills to learn |
+| POST | `/resume/tailor` | Resume tailored to one job: headline, summary, rewritten bullets, keywords, gaps |
+| POST | `/resume/cover-letter` | Cover letter for one job |
 
 Run it locally:
 ```bash

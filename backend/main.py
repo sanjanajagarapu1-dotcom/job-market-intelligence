@@ -12,10 +12,10 @@ from typing import Optional
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pypdf import PdfReader
 
-from backend import data
+from backend import ai, data
 
 app = FastAPI(
     title="Job Market Intelligence API",
@@ -80,9 +80,40 @@ class Match(BaseModel):
 
 
 class ResumeResult(BaseModel):
+    resume_text: str  # sent back so the website can ask for tailoring without re-uploading
     skills_found: list[str]
     matches: list[Match]
     skills_to_learn: list[NameCount]
+
+
+class TailorRequest(BaseModel):
+    resume_text: str = Field(..., min_length=50, max_length=30000)
+    job_id: str
+
+
+class Bullet(BaseModel):
+    original: str   # your bullet as written
+    rewritten: str  # same facts, tailored wording
+
+
+class TailoredResume(BaseModel):
+    job_title: Optional[str]
+    company: Optional[str]
+    limited_description: bool  # True when the job only has a short snippet (Adzuna)
+    headline: str
+    summary: str
+    skills_to_highlight: list[str]
+    bullets: list[Bullet]
+    keywords_to_include: list[str]  # job skills your resume already shows
+    missing_skills: list[str]       # job skills your resume doesn't show
+    gaps: list[str]                 # other unmet requirements (experience, domain, ...)
+
+
+class CoverLetter(BaseModel):
+    job_title: Optional[str]
+    company: Optional[str]
+    limited_description: bool
+    cover_letter: str
 
 
 # ---------- Filters shared by several endpoints ----------
@@ -155,9 +186,42 @@ async def resume_match(file: UploadFile = File(..., description="Your resume as 
     if len(content) > 5_000_000:
         raise HTTPException(status_code=400, detail="PDF is too large (max 5 MB).")
     try:
-        text = " ".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(content)).pages)
+        text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(content)).pages)
     except Exception:
         raise HTTPException(status_code=400, detail="Could not read this PDF.")
     if not text.strip():
         raise HTTPException(status_code=400, detail="No text found in the PDF (is it a scanned image?).")
-    return data.match_resume(text, data.get_jobs(), limit)
+    return {"resume_text": text, **data.match_resume(text, data.get_jobs(), limit)}
+
+
+def _job_for_ai(job_id):
+    job = data.get_job_detail(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    return job
+
+
+def _job_info(job):
+    return {"job_title": job.get("title"), "company": job.get("company"),
+            "limited_description": len(job.get("description") or "") < 600}
+
+
+@app.post("/resume/tailor", response_model=TailoredResume, tags=["resume"])
+def resume_tailor(request: TailorRequest):
+    """Tailor your resume to one job: headline, summary, rewritten bullets, skills to highlight, and honest gaps.
+    The AI only uses facts already in your resume."""
+    job = _job_for_ai(request.job_id)
+    try:
+        return {**_job_info(job), **ai.tailor_resume(request.resume_text, job)}
+    except ai.AIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.post("/resume/cover-letter", response_model=CoverLetter, tags=["resume"])
+def resume_cover_letter(request: TailorRequest):
+    """Write a cover letter for one job, using only facts from your resume."""
+    job = _job_for_ai(request.job_id)
+    try:
+        return {**_job_info(job), **ai.write_cover_letter(request.resume_text, job)}
+    except ai.AIUnavailable as e:
+        raise HTTPException(status_code=503, detail=str(e))

@@ -4,8 +4,11 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from backend import data
+from backend import ai, data
 from backend.main import app
+
+RESUME = ("Jane Doe. Skills: SQL, Excel, Tableau. Built Tableau dashboards and wrote SQL reports "
+          "for the sales team. Analyzed customer data in Excel.")
 
 
 @pytest.fixture
@@ -66,6 +69,66 @@ def test_resume_match_ranks_and_finds_gaps(client, monkeypatch):
     top = result["matches"][0]
     assert top["job_id"] == "1" and top["match"] == 100  # all skills + closest meaning
     assert {"name": "Python", "count": 2} in result["skills_to_learn"]
+
+
+@pytest.fixture
+def fake_ai(monkeypatch, fake_jobs):
+    """Fake job lookup + fake LLM answer, including a made-up skill the guardrail must drop."""
+    job = {**fake_jobs.iloc[0].to_dict(), "skills": ["SQL", "Tableau", "Dashboards", "Python", "Spark"],
+           "description": "We need SQL, Tableau and Python. " * 30}
+    monkeypatch.setattr(data, "get_job_detail", lambda job_id: job if job_id == "1" else None)
+    answers = {
+        ai.TAILOR_PROMPT: {
+            "headline": "Data Analyst skilled in SQL and Tableau",
+            "summary": "Analyst who builds SQL reports and Tableau dashboards.",
+            "skills_to_highlight": ["SQL", "Tableau", "Kubernetes"],  # Kubernetes is NOT in the resume
+            "bullets": [{"original": "Built Tableau dashboards", "rewritten": "Built Tableau dashboards for sales"},
+                        "not a valid bullet"],
+            "gaps": ["Needs Python experience", "3+ years of experience"],
+        },
+        ai.COVER_LETTER_PROMPT: {"cover_letter": "Dear [Hiring Manager],\n\nI am excited..."},
+    }
+    monkeypatch.setattr(ai, "_ask", lambda prompt, resume_text, job: answers[prompt])
+
+
+def test_resume_covers_handles_word_forms():
+    text = RESUME.lower()
+    assert ai.resume_covers("dashboards", text)        # "dashboards" exact
+    assert ai.resume_covers("reporting", text)         # "reports" ~ "reporting"
+    assert ai.resume_covers("data analysis", text)     # "Analyzed ... data"
+    assert not ai.resume_covers("Python", text)
+    assert not ai.resume_covers("R", text)             # short skills need an exact match
+
+
+def test_tailor_endpoint_applies_guardrails(client, fake_ai):
+    body = client.post("/resume/tailor", json={"resume_text": RESUME, "job_id": "1"}).json()
+    assert body["skills_to_highlight"] == ["SQL", "Tableau"]               # invented skill dropped
+    assert body["bullets"] == [{"original": "Built Tableau dashboards",
+                                "rewritten": "Built Tableau dashboards for sales"}]  # bad item dropped
+    assert body["keywords_to_include"] == ["SQL", "Tableau", "Dashboards"]  # computed by code
+    assert body["missing_skills"] == ["Python", "Spark"]                    # computed by code
+    assert body["gaps"] == ["3+ years of experience"]  # "Needs Python..." already covered by missing_skills
+    assert body["limited_description"] is False
+
+
+def test_cover_letter_endpoint(client, fake_ai):
+    body = client.post("/resume/cover-letter", json={"resume_text": RESUME, "job_id": "1"}).json()
+    assert body["cover_letter"].startswith("Dear [Hiring Manager]")
+    assert body["company"] == "Acme"
+
+
+def test_tailor_unknown_job_and_short_resume(client, fake_ai):
+    assert client.post("/resume/tailor", json={"resume_text": RESUME, "job_id": "999"}).status_code == 404
+    assert client.post("/resume/tailor", json={"resume_text": "too short", "job_id": "1"}).status_code == 422
+
+
+def test_tailor_reports_when_ai_unavailable(client, fake_ai, monkeypatch):
+    def broken(*args):
+        raise ai.AIUnavailable("The AI service is busy right now.")
+    monkeypatch.setattr(ai, "_ask", broken)
+    response = client.post("/resume/tailor", json={"resume_text": RESUME, "job_id": "1"})
+    assert response.status_code == 503
+    assert "busy" in response.json()["detail"]
 
 
 def test_resume_endpoint_rejects_non_pdf(client):
