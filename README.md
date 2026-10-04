@@ -1,6 +1,10 @@
 # 📊 AI Job Market Intelligence
 
-**🔗 Live demo: [job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app](https://job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app)**
+- 🔗 **Live website (Next.js):** [job-market-intelligence-six.vercel.app](https://job-market-intelligence-six.vercel.app)
+- 🔗 **Live API docs (FastAPI):** [job-market-api-fezz.onrender.com/docs](https://job-market-api-fezz.onrender.com/docs)
+- 🔗 **Streamlit dashboard:** [job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app](https://job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app)
+
+> The API runs on Render's free tier, so the first page load after it has been idle can take 30–60 seconds while the server wakes up.
 
 An end-to-end data pipeline and dashboard that collects data analyst and data scientist job postings, uses an LLM to extract the skills each job requires, and helps job seekers see which roles fit their resume and which skills to learn next.
 
@@ -31,6 +35,8 @@ flowchart LR
     F --> V[embed_jobs.py<br/>fastembed]
     V --> G
     G --> H[Streamlit dashboard<br/>app.py]
+    G --> API[FastAPI on Render<br/>Docker]
+    API --> WEB[Next.js website<br/>Vercel]
 ```
 
 ## Tech stack
@@ -44,6 +50,7 @@ flowchart LR
 | Embeddings | fastembed (`BAAI/bge-small-en-v1.5`, 384 dims) |
 | Dashboard | Streamlit, Plotly |
 | API | FastAPI, Uvicorn, Pydantic |
+| Website | Next.js 16, React, TypeScript, Tailwind CSS, shadcn/ui, Recharts, Vercel |
 | Resume parsing | pypdf |
 | Automation / deployment | GitHub Actions (daily pipeline + Docker build check), Docker, Render, Streamlit Community Cloud |
 
@@ -64,6 +71,7 @@ job-market-intelligence/
 │   ├── main.py                # FastAPI endpoints
 │   ├── data.py                # loading, stats, resume matching
 │   └── requirements.txt
+├── frontend/                  # Next.js website (dashboard, jobs, resume pages)
 ├── sql/schema.sql             # database tables, pgvector, match_jobs()
 ├── docs/                      # screenshots
 ├── app.py                     # Streamlit dashboard
@@ -121,6 +129,18 @@ uvicorn backend.main:app --reload
 ```
 
 ## Screenshots
+
+### Next.js website
+
+**Dashboard**
+
+![Next.js dashboard](docs/next-dashboard.png)
+
+**Resume analyzer**
+
+![Next.js resume analyzer](docs/next-resume.png)
+
+### Streamlit dashboard
 
 **Market overview**: KPIs, top skills, top hiring companies, seniority and work mode
 
