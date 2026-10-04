@@ -14,5 +14,6 @@ services:
         sync: false   # you type the value in Render, it is never stored in GitHub
       - key: SUPABASE_KEY
         sync: false
+      # Only these websites may call the API from a browser (CORS)
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: "https://job-market-intelligence-six.vercel.app,http://localhost:3000"
