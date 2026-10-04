@@ -1,5 +1,8 @@
 # 📊 AI Job Market Intelligence
 
+[![Tests](https://github.com/sanjanajagarapu1-dotcom/job-market-intelligence/actions/workflows/tests.yml/badge.svg)](https://github.com/sanjanajagarapu1-dotcom/job-market-intelligence/actions/workflows/tests.yml)
+[![Daily job refresh](https://github.com/sanjanajagarapu1-dotcom/job-market-intelligence/actions/workflows/daily_refresh.yml/badge.svg)](https://github.com/sanjanajagarapu1-dotcom/job-market-intelligence/actions/workflows/daily_refresh.yml)
+
 - 🔗 **Live website (Next.js):** [job-market-intelligence-six.vercel.app](https://job-market-intelligence-six.vercel.app)
 - 🔗 **Live API docs (FastAPI):** [job-market-api-fezz.onrender.com/docs](https://job-market-api-fezz.onrender.com/docs)
 - 🔗 **Streamlit dashboard:** [job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app](https://job-market-intelligence-gnjvwgxazlj66yfrimq74p.streamlit.app)
@@ -52,7 +55,8 @@ flowchart LR
 | API | FastAPI, Uvicorn, Pydantic |
 | Website | Next.js 16, React, TypeScript, Tailwind CSS, shadcn/ui, Recharts, Vercel |
 | Resume parsing | pypdf |
-| Automation / deployment | GitHub Actions (daily pipeline + Docker build check), Docker, Render, Streamlit Community Cloud |
+| Testing / CI | pytest, FastAPI TestClient, GitHub Actions (tests, lint, build, Docker smoke test) |
+| Automation / deployment | GitHub Actions daily pipeline, Docker, Render, Vercel, Streamlit Community Cloud |
 
 ## Project structure
 
@@ -72,6 +76,7 @@ job-market-intelligence/
 │   ├── data.py                # loading, stats, resume matching
 │   └── requirements.txt
 ├── frontend/                  # Next.js website (dashboard, jobs, resume pages)
+├── tests/                     # pytest: pipeline helpers + API endpoints
 ├── sql/schema.sql             # database tables, pgvector, match_jobs()
 ├── docs/                      # screenshots
 ├── app.py                     # Streamlit dashboard
