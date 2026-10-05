@@ -2,6 +2,7 @@
 
 import math
 
+import daily_applications
 import extract_skills
 import fetch_company_jobs
 import load_to_db
@@ -36,6 +37,23 @@ def test_requirements_part_falls_back_to_start_and_trims():
     text = "x" * 10_000
     part = extract_skills.requirements_part(text)
     assert part == "x" * extract_skills.MAX_DESCRIPTION_CHARS
+
+
+# ---------- daily_applications ----------
+def test_slug_is_safe_for_folder_names():
+    assert daily_applications.slug({"company": "Stripe, Inc.", "title": "Data Analyst / BI"}) == \
+        "stripe-inc-data-analyst-bi"
+
+
+def test_tailored_to_text_keeps_notes_separate():
+    text = daily_applications.tailored_to_text({
+        "headline": "Data Analyst", "summary": "Analyst.", "skills_to_highlight": ["SQL"],
+        "bullets": [{"original": "Wrote SQL", "rewritten": "Developed SQL queries"}],
+        "keywords_to_include": ["SQL"], "missing_skills": ["Spark"], "gaps": ["3+ years"],
+    })
+    resume_part, notes = text.split("--- Notes for you")
+    assert "- Developed SQL queries" in resume_part and "Spark" not in resume_part
+    assert "Wrote SQL" in notes and "Spark" in notes and "Gap: 3+ years" in notes
 
 
 # ---------- load_to_db ----------

@@ -82,8 +82,9 @@ export function AiPanel({ job, mode, resumeText, onClose }: {
   );
 }
 
-function TailoredView({ data }: { data: TailoredResume }) {
-  const asText = [
+/** Plain-text version of a tailored resume, for copying and downloading. */
+export function tailoredToText(data: TailoredResume) {
+  return [
     data.headline,
     "",
     "SUMMARY",
@@ -94,7 +95,16 @@ function TailoredView({ data }: { data: TailoredResume }) {
     "",
     "EXPERIENCE BULLETS",
     ...data.bullets.map((b) => `- ${b.rewritten}`),
+    "",
+    "--- Notes for you (not for the resume) ---",
+    `Job keywords you already have: ${data.keywords_to_include.join(", ") || "none"}`,
+    `Job skills you don't show: ${data.missing_skills.join(", ") || "none"}`,
+    ...data.gaps.map((g) => `Gap: ${g}`),
   ].join("\n");
+}
+
+export function TailoredView({ data }: { data: TailoredResume }) {
+  const asText = tailoredToText(data);
 
   return (
     <div className="space-y-5">
@@ -159,7 +169,7 @@ function Badges({ items, variant, empty }: { items: string[]; variant: "secondar
   );
 }
 
-function ActionButtons({ text, filename }: { text: string; filename: string }) {
+export function ActionButtons({ text, filename }: { text: string; filename: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex gap-2">
@@ -192,7 +202,11 @@ function ActionButtons({ text, filename }: { text: string; filename: string }) {
   );
 }
 
-function fileName(kind: string, job: { title?: string | null; company?: string | null }) {
+export function jobSlug(job: { title?: string | null; company?: string | null }) {
   const slug = `${job.company ?? ""}-${job.title ?? ""}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return `${kind}-${slug || "job"}.txt`;
+  return slug.slice(0, 80) || "job";
+}
+
+function fileName(kind: string, job: { title?: string | null; company?: string | null }) {
+  return `${kind}-${jobSlug(job)}.txt`;
 }

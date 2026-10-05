@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AiPanel, type AiMode } from "@/components/ai-panels";
+import { AutoTailor } from "@/components/auto-tailor";
 import { HorizontalBars } from "@/components/charts";
 import { ErrorMessage, Loading } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { type Match, type ResumeResult, fetchJson } from "@/lib/api";
 
+const AUTO_TAILOR_COUNT = 10; // top matches that get a tailored resume + cover letter automatically
+
 export default function ResumePage() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ResumeResult | null>(null);
@@ -18,6 +21,17 @@ export default function ResumePage() {
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
   const [active, setActive] = useState<{ job: Match; mode: AiMode } | null>(null);
+  // Same array object for the same result, so automatic tailoring runs once per upload
+  // (one per company + title: the same job is often posted once per city)
+  const topJobs = useMemo(() => {
+    const seen = new Set<string>();
+    return (result?.matches ?? [])
+      .filter((m) => {
+        const key = `${m.company}|${m.title}`.toLowerCase();
+        return !seen.has(key) && !!seen.add(key);
+      })
+      .slice(0, AUTO_TAILOR_COUNT);
+  }, [result]);
 
   function openAi(job: Match, mode: AiMode) {
     setActive({ job, mode });
@@ -36,7 +50,7 @@ export default function ResumePage() {
     const form = new FormData();
     form.append("file", file);
     try {
-      setResult(await fetchJson<ResumeResult>("/resume/match?limit=15", { method: "POST", body: form }));
+      setResult(await fetchJson<ResumeResult>("/resume/match?limit=30", { method: "POST", body: form }));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -88,6 +102,8 @@ export default function ResumePage() {
             </CardContent>
           </Card>
 
+          {topJobs.length > 0 && <AutoTailor jobs={topJobs} resumeText={result.resume_text} />}
+
           <Card>
             <CardHeader>
               <CardTitle>Best-matching jobs</CardTitle>
@@ -106,7 +122,7 @@ export default function ResumePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {result.matches.map((m) => (
+                  {result.matches.slice(0, 15).map((m) => (
                     <TableRow key={m.job_id}>
                       <TableCell className="w-40">
                         <MatchBar value={m.match} />

@@ -17,6 +17,8 @@ An end-to-end data pipeline and dashboard that collects data analyst and data sc
 - **AI skill extraction**: an LLM (Groq, `gpt-oss`) reads each job description and returns structured JSON: skills, seniority, work mode, and years of experience
 - **Cloud database**: jobs are stored in Supabase (PostgreSQL) with de-duplicating upserts
 - **AI resume tailoring and cover letters**: for any matching job, an LLM rewrites the resume's existing bullets one-for-one (each shown next to the original), suggests a headline and summary, and writes a cover letter. Guardrails: the prompt forbids inventing facts, skill gaps and keywords are computed in code from the job's extracted skills, and highlighted skills not found in the resume are dropped.
+- **Automatic tailoring**: after a resume upload, the website automatically creates a tailored resume and cover letter for the top 10 distinct matches (one per company + title), with progress, retry on rate limits, and a "Download all (ZIP)" button.
+- **Daily applications on your own computer** (`pipeline/daily_applications.py`): every day it finds new jobs matching your resume (≥ 60% by default) and writes a tailored resume and cover letter for up to 10 of them into `private/applications/<date>/`. The `private/` folder is git-ignored, so your resume never leaves your computer.
 - **Automated daily refresh**: a GitHub Actions cron job runs the whole pipeline every day, and the AI processes only new jobs
 - **Interactive dashboard** (Streamlit + Plotly):
   - Market overview: top skills, hiring companies, seniority, remote vs. onsite, salaries
@@ -69,7 +71,8 @@ job-market-intelligence/
 │   ├── companies.csv          # list of company job boards
 │   ├── extract_skills.py      # LLM extraction → data/jobs_enriched.csv
 │   ├── load_to_db.py          # upload to Supabase
-│   └── embed_jobs.py          # job embeddings → pgvector
+│   ├── embed_jobs.py          # job embeddings → pgvector
+│   └── daily_applications.py  # daily tailored resumes + cover letters (local, private)
 ├── .github/workflows/
 │   └── daily_refresh.yml      # daily pipeline run
 ├── backend/
